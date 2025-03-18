@@ -7,7 +7,7 @@ plugins {
 
 android {
     namespace = "com.example.real_time_detection"
-    compileSdk = flutter.compileSdkVersion
+    compileSdk 35
     ndkVersion = flutter.ndkVersion
 
     compileOptions {
