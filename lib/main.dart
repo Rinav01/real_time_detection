@@ -1,7 +1,7 @@
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:real_time_detection/screen/object_detection_screen.dart';
+import 'package:real_time_detection/screen/splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -28,8 +28,7 @@ class MyApp extends StatelessWidget {
           colorScheme: ColorScheme.fromSeed(seedColor: Colors.deepPurple),
           useMaterial3: true,
         ),
-        home: ObjectDetectionScreen(
-          cameras: cameras,
-        ));
+        home:SplashScreen(cameras: cameras,) 
+        );
   }
 }

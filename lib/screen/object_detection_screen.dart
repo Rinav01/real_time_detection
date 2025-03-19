@@ -95,10 +95,12 @@ class _ObjectDetectionScreenState extends State<ObjectDetectionScreen> {
       appBar: AppBar(
         title: Text(
           "Object Detection",
-          style: myTextStyle24(fontWeight: FontWeight.bold),
+          style: myTextStyle24(fontWeight: FontWeight.bold , fontColors: Colors.white ),
         ),
+        backgroundColor: const Color(0xff022246),
         centerTitle: true,
       ),
+      backgroundColor: const Color(0xff022246),
       body: SingleChildScrollView(
         child: Stack(
           children: [
