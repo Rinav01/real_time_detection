@@ -1,9 +1,13 @@
+// ignore_for_file: depend_on_referenced_packages
+
 import 'dart:io';
 import 'package:camera/camera.dart';
 import 'package:flutter/material.dart';
 import 'package:google_mlkit_image_labeling/google_mlkit_image_labeling.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:real_time_detection/utils/my_custom_text_style.dart';
+import 'package:tflite_flutter/tflite_flutter.dart';
+import 'package:tflite_flutter_helper/tflite_flutter_helper.dart';
 
 class ObjectDetectionScreen extends StatefulWidget {
   final List<CameraDescription> cameras;
@@ -17,8 +21,15 @@ class _ObjectDetectionScreenState extends State<ObjectDetectionScreen> {
   late CameraController _cameraController;
   bool isCameraReady = false;
   String result = "Detecting...";
-  late ImageLabeler _imageLabeler;
+  late Interpreter _interpreter;
   bool isDetecting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeCamera();
+    _initializeInterpreter();
+  }
 
   Future<void> _initializeCamera() async {
     _cameraController = CameraController(
@@ -32,9 +43,12 @@ class _ObjectDetectionScreenState extends State<ObjectDetectionScreen> {
     startImageStream();
   }
 
-  void _initializeMLKit() {
-    _imageLabeler =
-        ImageLabeler(options: ImageLabelerOptions(confidenceThreshold: 0.5));
+  Future<void> _initializeInterpreter() async {
+    try {
+      _interpreter = await Interpreter.fromAsset('model.tflite');
+    } catch (e) {
+      print("Error loading model: $e");
+    }
   }
 
   void startImageStream() {
@@ -58,21 +72,30 @@ class _ObjectDetectionScreenState extends State<ObjectDetectionScreen> {
 
       final inputImage = InputImage.fromFilePath(filePath);
 
-      final List<ImageLabel> labels =
-          await _imageLabeler.processImage(inputImage);
+      // Preprocess the image and run inference
+      final TensorImage tensorImage = TensorImage.fromFile(imageFile);
+      final TensorBuffer outputBuffer =
+          TensorBuffer.createFixedSize([1, 1001], TfLiteType.float32);
+      _interpreter.run(tensorImage.buffer, outputBuffer.buffer);
 
-      String detectedObjects = labels.isNotEmpty
-          ? labels
-              .map(
-                (label) =>
-                    "${label.label} - ${(label.confidence * 100).toStringAsFixed(2)}%",
-              )
-              .join("\n")
-          : "No Object Detected";
+      // Process the output and update the result
+      final List<String> labels =
+          await FileUtil.loadLabels('assets/labels.txt');
+      final List<double> probabilities = outputBuffer.getDoubleList();
+      final List<String> detectedObjects = [];
+      for (int i = 0; i < probabilities.length; i++) {
+        if (probabilities[i] > 0.5) {
+          detectedObjects.add(
+              "${labels[i]} - ${(probabilities[i] * 100).toStringAsFixed(2)}%");
+        }
+      }
+
       setState(() {
-        result = detectedObjects;
+        result = detectedObjects.isNotEmpty
+            ? detectedObjects.join("\n")
+            : "No Object Detected";
       });
-      print("Detected Objects: $detectedObjects");
+      print("Detected Objects: $result");
     } catch (error) {
       print("Error Processing Image: $error");
       ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
@@ -83,19 +106,13 @@ class _ObjectDetectionScreenState extends State<ObjectDetectionScreen> {
   }
 
   @override
-  void initState() {
-    super.initState();
-    _initializeCamera();
-    _initializeMLKit();
-  }
-
-  @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         title: Text(
           "Object Detection",
-          style: myTextStyle24(fontWeight: FontWeight.bold , fontColors: Colors.white ),
+          style: myTextStyle24(
+              fontWeight: FontWeight.bold, fontColors: Colors.white),
         ),
         backgroundColor: const Color(0xff022246),
         centerTitle: true,
@@ -109,7 +126,7 @@ class _ObjectDetectionScreenState extends State<ObjectDetectionScreen> {
                 width: MediaQuery.of(context).size.width,
                 child: isCameraReady
                     ? CameraPreview(_cameraController)
-                    : Center(child: CircularProgressIndicator()),
+                    : const Center(child: CircularProgressIndicator()),
               ),
             ),
             Positioned(
@@ -117,7 +134,7 @@ class _ObjectDetectionScreenState extends State<ObjectDetectionScreen> {
               left: 20,
               child: Text(
                 result,
-                style: TextStyle(
+                style: const TextStyle(
                   color: Colors.white,
                   fontSize: 16,
                   backgroundColor: Colors.black54,

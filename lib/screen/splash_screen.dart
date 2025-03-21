@@ -36,25 +36,25 @@ class _SplashScreenState extends State<SplashScreen> {
           mainAxisAlignment: MainAxisAlignment.center,
           crossAxisAlignment: CrossAxisAlignment.center,
           children: [
-            SizedBox(
+            const SizedBox(
               height: 51,
             ),
             Image.asset(
               "assets/icons/loupe.png",
               height: 200,
             ),
-            SizedBox(
+            const SizedBox(
               height: 8,
             ),
             Text("Blind Assistance",
                 style: myTextStyle32(
                     fontWeight: FontWeight.bold, fontColors: Colors.white)),
-            Spacer(),
+            const Spacer(),
             Text(
               "Powered by K.R.S.",
               style: myTextStyle18(fontColors: Colors.white),
             ),
-            SizedBox(
+            const SizedBox(
               height: 22,
             )
           ],
